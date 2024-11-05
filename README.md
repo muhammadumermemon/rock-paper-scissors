@@ -1,70 +1,67 @@
-# Rock, Paper, Scissors Game
+# Simple Firewall
 
-This repository contains a simple command-line Rock, Paper, Scissors game written in Python. The game allows a user to play against the computer.
+This repository contains a basic firewall implemented in Python using the `scapy` library. The firewall captures network packets and filters them based on predefined rules, such as allowed IP addresses and blocked ports.
 
 ## Requirements
 
 - Python 3.x
+- `scapy` library
 
 ## Installation
 
 1. **Clone the repository:**
 
     ```bash
-    git clone https://github.com/your-username/your-repo-name.git
-    cd your-repo-name
+    git clone https://github.com/your-username/simple-firewall.git
+    cd simple-firewall
+    ```
+
+2. **Install the `scapy` library:**
+
+    ```bash
+    pip install scapy
     ```
 
 ## Usage
 
-1. **Run the game:**
+1. **Run the firewall:**
 
     Execute the script using Python:
 
     ```bash
-    python script.py
+    python simple_firewall.py
     ```
 
-2. **Gameplay:**
+2. **Functionality:**
 
-    - The game will prompt you to enter your choice (rock, paper, or scissors).
-    - The computer will randomly select its choice.
-    - The result of the game (win, lose, or tie) will be displayed.
+    - The script will capture network packets.
+    - It will filter packets based on allowed IP addresses and blocked ports.
+    - Blocked packets will be logged and displayed.
 
 ## Example
 
-Here's an example of how the game works:
+Here's an example of how the firewall works:
 
 ```python
-import random
+from scapy.all import sniff, IP, TCP
 
-def get_user_choice():
-    user_choice = input("Enter your choice (rock, paper, scissors): ").lower()
-    while user_choice not in ['rock', 'paper', 'scissors']:
-        user_choice = input("Invalid choice. Please enter rock, paper, or scissors: ").lower()
-    return user_choice
+# Define allowed IPs and blocked ports
+ALLOWED_IPS = ['192.168.1.1', '192.168.1.2']
+BLOCKED_PORTS = [80, 443]
 
-def get_computer_choice():
-    choices = ['rock', 'paper', 'scissors']
-    return random.choice(choices)
+# Callback function to process each packet
+def packet_callback(packet):
+    if packet.haslayer(IP):
+        ip_src = packet[IP].src
+        if ip_src not in ALLOWED_IPS:
+            print(f"Blocked packet from {ip_src}")
+            return
+    if packet.haslayer(TCP):
+        port = packet[TCP].dport
+        if port in BLOCKED_PORTS:
+            print(f"Blocked packet to port {port}")
+            return
+    print(packet.show())
 
-def determine_winner(user_choice, computer_choice):
-    if user_choice == computer_choice:
-        return "It's a tie!"
-    elif (user_choice == 'rock' and computer_choice == 'scissors') or \
-         (user_choice == 'paper' and computer_choice == 'rock') or \
-         (user_choice == 'scissors' and computer_choice == 'paper'):
-        return "You win!"
-    else:
-        return "You lose!"
-
-def play_game():
-    user_choice = get_user_choice()
-    computer_choice = get_computer_choice()
-    print(f"\nYou chose: {user_choice}")
-    print(f"Computer chose: {computer_choice}")
-    result = determine_winner(user_choice, computer_choice)
-    print(result)
-
-if __name__ == "__main__":
-    play_game()
+# Start sniffing packets
+sniff(prn=packet_callback, store=0)
